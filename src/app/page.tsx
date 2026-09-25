@@ -29,7 +29,7 @@ const getCalc = (julday: number, planet: number, flags: number) => {
 
 const getHouses = (julday: number, lat: number, lon: number, houseSystem: string) => {
   return new Promise((resolve, reject) => {
-    swisseph.swe_houses(julday, lat, lon, houseSystem.charCodeAt(0), (result: any) => {
+    swisseph.swe_houses(julday, lat, lon, houseSystem, (result: any) => {
       if (result.error) reject(result.error);
       else resolve(result);
     });
