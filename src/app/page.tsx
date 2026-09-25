@@ -1,19 +1,17 @@
 import swisseph from 'swisseph';
 
-const getJulDay = (year: number, month: number, day: number, hour: number) => {
-  return new Promise((resolve, reject) => {
+const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => {
+  return new Promise((resolve) => {
     swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (result: any) => {
-      if (result.error) reject(result.error);
-      else resolve(result.julday);
+      resolve(typeof result === 'number' ? result : result.julday);
     });
   });
 };
 
-const getAyanamsa = (julday: number) => {
-  return new Promise((resolve, reject) => {
+const getAyanamsa = (julday: number): Promise<number> => {
+  return new Promise((resolve) => {
     swisseph.swe_get_ayanamsa_ut(julday, (result: any) => {
-      if (result.error) reject(result.error);
-      else resolve(result.ayanamsa);
+      resolve(typeof result === 'number' ? result : result.ayanamsa);
     });
   });
 };
