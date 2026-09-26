@@ -147,33 +147,33 @@ export default async function JyotishMVP() {
           </div>
 
           <div className="flex justify-between">
+            <span className="text-green-500">SUN LONGITUDE</span>
+            <span>{sunLong.toFixed(4)}°</span>
+          </div>
+
+          <div className="flex justify-between">
             <span className="text-green-500">CURRENT NAKSHATRA</span>
             <span className="text-yellow-400 font-bold">{currentNakshatra}</span>
           </div>
 
           <div className="flex justify-between">
-            <span className="text-green-500">TITHI</span>
+            <span className="text-green-500">CURRENT TITHI</span>
             <span>{tithiNames[tithiIndex]}</span>
           </div>
 
           <div className="flex justify-between">
-            <span className="text-green-500">KARANA</span>
+            <span className="text-green-500">CURRENT KARANA</span>
             <span>{getKaranaName(karanaIndex)}</span>
           </div>
 
           <div className="flex justify-between">
-            <span className="text-green-500">YOGA</span>
+            <span className="text-green-500">CURRENT YOGA</span>
             <span>{yogaNames[yogaIndex]}</span>
           </div>
 
           <div className="flex justify-between">
-            <span className="text-green-500">JUPITER (WHOLE SIGN)</span>
-            <span>House {jupHouse}</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-green-500">VENUS (WHOLE SIGN)</span>
-            <span>House {venHouse}</span>
+            <span className="text-green-500">BENEFIC ANCHORS</span>
+            <span>Jupiter in House {jupHouse} • Venus in House {venHouse}</span>
           </div>
         </div>
 
