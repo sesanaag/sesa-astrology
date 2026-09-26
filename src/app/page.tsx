@@ -117,11 +117,43 @@ export default async function JyotishMVP() {
   const nakshatraIndex = Math.floor(moonLong / (360 / 27));
   const currentNakshatra = nakshatras[nakshatraIndex % 27];
 
+  // Vara (Vedic Weekday) - simplified sunrise boundary at 6 AM IST
+  const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  let dayIndex = istTime.getUTCDay();
+  if (istTime.getUTCHours() < 6) {
+    dayIndex = (dayIndex - 1 + 7) % 7;
+  }
+  const varaNames = [
+    "Sun's Vara (Sunday)", "Moon's Vara (Monday)", "Mars's Vara (Tuesday)",
+    "Mercury's Vara (Wednesday)", "Jupiter's Vara (Thursday)",
+    "Venus's Vara (Friday)", "Saturn's Vara (Saturday)"
+  ];
+  const currentVara = varaNames[dayIndex];
+
+  // Tara (Personalized Nakshatra Alignment) - natal Moon in Ashlesha (index 8)
+  const natalNakshatraIndex = 8;
+  const taraDistance = (nakshatraIndex - natalNakshatraIndex + 27) % 27;
+  const taraIndex = taraDistance % 9;
+  const taraData = [
+    "Janma (Birth) - Unfavorable",
+    "Sampat (Wealth) - Favorable",
+    "Vipat (Danger) - Unfavorable",
+    "Kshema (Security) - Favorable",
+    "Pratyak (Obstacles) - Unfavorable",
+    "Sadhaka (Success) - Favorable",
+    "Vadha (Destruction) - Unfavorable",
+    "Maitra (Friendly) - Favorable",
+    "Parama Maitra (Great Friend) - Favorable"
+  ];
+  const currentTara = taraData[taraIndex];
+  const isTaraFavorable = [1, 3, 5, 7, 8].includes(taraIndex);
+  const taraColor = isTaraFavorable ? "text-green-400" : "text-red-500";
+
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono p-8">
       <div className="max-w-2xl mx-auto border border-green-500/30 rounded bg-black/80 p-8 shadow-2xl">
         <div className="mb-8 border-b border-green-500/30 pb-4">
-          <div className="text-green-300 text-xl font-bold tracking-widest">JYOTISH TERMINAL v0.2</div>
+          <div className="text-green-300 text-xl font-bold tracking-widest">JYOTISH TERMINAL v0.4</div>
           <div className="text-green-500/60 text-sm">sidereal • lahiri ayanamsa • whole sign houses</div>
         </div>
 
@@ -169,6 +201,16 @@ export default async function JyotishMVP() {
           <div className="flex justify-between">
             <span className="text-green-500">CURRENT YOGA</span>
             <span>{yogaNames[yogaIndex]}</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-green-500">CURRENT VARA</span>
+            <span>{currentVara}</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-green-500">PERSONAL TARA</span>
+            <span className={taraColor}>{currentTara}</span>
           </div>
 
           <div className="flex justify-between">
