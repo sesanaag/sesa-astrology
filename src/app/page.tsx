@@ -62,6 +62,9 @@ export default async function JyotishMVP() {
   const venResult = await getCalc(julday, swisseph.SE_VENUS, moonFlags);
   const venLong = venResult.longitude || venResult[0] || 0;
 
+  const marsResult = await getCalc(julday, swisseph.SE_MARS, moonFlags);
+  const marsLong = marsResult.longitude || marsResult[0] || 0;
+
   const housesResult = await getHouses(julday, lat, lon, 'P');
   const ascTropical = housesResult.ascendant || housesResult.house?.[1] || housesResult[1] || 0;
   let lagna = (ascTropical - ayanamsa + 360) % 360;
@@ -79,6 +82,9 @@ export default async function JyotishMVP() {
   const venSign = Math.floor(venLong / 30);
   const jupHouse = (jupSign - lagnaSign + 12) % 12 + 1;
   const venHouse = (venSign - lagnaSign + 12) % 12 + 1;
+
+  const marsSign = Math.floor(marsLong / 30);
+  const marsHouse = (marsSign - lagnaSign + 12) % 12 + 1;
 
   const nakshatras = [
     "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira",
@@ -171,18 +177,17 @@ export default async function JyotishMVP() {
   const isKrakacha = pakshaTithi === krakachaMap[dayIndex];
   const isBadCompoundYoga = isDagdha || isVisha || isHutasana || isKrakacha;
 
-  let compoundYoga = "None Active";
-  if (isAmrita) compoundYoga = "Amrita";
-  else if (isSiddha) compoundYoga = "Siddha";
-  else if (isDagdha) compoundYoga = "Dagdha";
-  else if (isVisha) compoundYoga = "Visha";
-  else if (isHutasana) compoundYoga = "Hutasana";
-  else if (isKrakacha) compoundYoga = "Krakacha";
+  const isKujaAshtaka = marsHouse === 8;
+  const isBhriguShataka = venHouse === 6;
+  const hasFatalFlaw = isKujaAshtaka || isBhriguShataka;
 
-  // Verdict Engine v0.5 (Hierarchy of Power)
+  // Verdict Engine v0.6 - Mahadosha (Fatal Flaw) Filter at top
   let verdict = "[ NEUTRAL ] Standard Muhurta conditions.";
   let verdictColor = "text-yellow-400";
-  if (isBadCompoundYoga) {
+  if (hasFatalFlaw) {
+    verdict = "[ FATAL ] Mahadosha active: " + (isKujaAshtaka ? "Kuja Ashtaka (Mars in 8th). " : "") + (isBhriguShataka ? "Bhrigu Shataka (Venus in 6th)." : "") + " DO NOT PROCEED.";
+    verdictColor = "text-red-600 bg-red-900/20 font-bold p-1";
+  } else if (isBadCompoundYoga) {
     verdict = "[ DESTROYED ] Inauspicious Vara/Tithi Yoga active (Dagdha/Visha/Hutasana/Krakacha). Avoid.";
     verdictColor = "text-red-500 font-bold";
   } else if (isAmrita || isSiddha) {
@@ -206,7 +211,7 @@ export default async function JyotishMVP() {
     <div className="min-h-screen bg-black text-green-400 font-mono p-8">
       <div className="max-w-2xl mx-auto border border-green-500/30 rounded bg-black/80 p-8 shadow-2xl">
         <div className="mb-8 border-b border-green-500/30 pb-4">
-          <div className="text-green-300 text-xl font-bold tracking-widest">JYOTISH TERMINAL v0.5</div>
+          <div className="text-green-300 text-xl font-bold tracking-widest">JYOTISH TERMINAL v0.6</div>
           <div className="text-green-500/60 text-sm">sidereal • lahiri ayanamsa • whole sign houses</div>
         </div>
 
@@ -269,6 +274,11 @@ export default async function JyotishMVP() {
           <div className="flex justify-between">
             <span className="text-green-500">COMPOUND YOGA</span>
             <span className={isBadCompoundYoga ? "text-red-500" : ((isAmrita || isSiddha) ? "text-green-400" : "text-yellow-400")}>{compoundYoga}</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-green-500">PLANETARY ANCHORS</span>
+            <span>Jupiter in House {jupHouse} • Venus in House {venHouse} • Mars in House {marsHouse}</span>
           </div>
 
           <div className={`pt-6 border-t border-green-500/30 text-sm ${verdictColor}`}>
