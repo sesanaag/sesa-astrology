@@ -5,22 +5,11 @@ import { NextResponse } from 'next/server';
 swisseph.swe_set_ephe_path(path.join(process.cwd(), 'ephe'));
 swisseph.swe_set_sid_mode(1); // Lahiri
 
-async function getJulDay(date: Date): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const utc = date.getTime() / 1000;
-    swisseph.swe_utc_to_jd(
-      date.getUTCFullYear(),
-      date.getUTCMonth() + 1,
-      date.getUTCDate(),
-      date.getUTCHours(),
-      date.getUTCMinutes(),
-      date.getUTCSeconds(),
-      1,
-      (result: any) => {
-        if (result.error) reject(new Error(result.error));
-        else resolve(result.julianDay);
-      }
-    );
+const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => {
+  return new Promise((resolve) => {
+    swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (result: any) => {
+      resolve(typeof result === 'number' ? result : result.julday);
+    });
   });
 }
 
@@ -33,9 +22,9 @@ async function getAyanamsa(julday: number): Promise<number> {
   });
 }
 
-async function getCalc(julday: number, body: number): Promise<any> {
+const getCalc = (julday: number, body: number, flags: number): Promise<any> => {
   return new Promise((resolve, reject) => {
-    swisseph.swe_calc_ut(julday, body, swisseph.SEFLG_SIDEREAL, (result: any) => {
+    swisseph.swe_calc_ut(julday, body, flags, (result: any) => {
       if (result.error) reject(new Error(result.error));
       else resolve(result);
     });
@@ -48,11 +37,17 @@ export async function GET() {
     testDate.setUTCDate(testDate.getUTCDate() + i);
     testDate.setUTCHours(12, 0, 0, 0);
 
-    const julday = await getJulDay(testDate);
+    const year = testDate.getUTCFullYear();
+    const month = testDate.getUTCMonth() + 1;
+    const day = testDate.getUTCDate();
+    const hour = testDate.getUTCHours() + testDate.getUTCMinutes() / 60 + testDate.getUTCSeconds() / 3600;
+
+    const julday = await getJulDay(year, month, day, hour);
     await getAyanamsa(julday);
 
-    const sunData = await getCalc(julday, swisseph.SE_SUN);
-    const moonData = await getCalc(julday, swisseph.SE_MOON);
+    const flags = swisseph.SEFLG_SIDEREAL | swisseph.SEFLG_SPEED | swisseph.SEFLG_SWIEPH;
+    const sunData = await getCalc(julday, swisseph.SE_SUN, flags);
+    const moonData = await getCalc(julday, swisseph.SE_MOON, flags);
     const sunLong = sunData.longitude;
     const moonLong = moonData.longitude;
 
