@@ -177,6 +177,14 @@ export default async function JyotishMVP() {
   const isKrakacha = pakshaTithi === krakachaMap[dayIndex];
   const isBadCompoundYoga = isDagdha || isVisha || isHutasana || isKrakacha;
 
+  let compoundYoga = "None Active";
+  if (isAmrita) compoundYoga = "Amrita";
+  else if (isSiddha) compoundYoga = "Siddha";
+  else if (isDagdha) compoundYoga = "Dagdha";
+  else if (isVisha) compoundYoga = "Visha";
+  else if (isHutasana) compoundYoga = "Hutasana";
+  else if (isKrakacha) compoundYoga = "Krakacha";
+
   const isKujaAshtaka = marsHouse === 8;
   const isBhriguShataka = venHouse === 6;
   const hasFatalFlaw = isKujaAshtaka || isBhriguShataka;
