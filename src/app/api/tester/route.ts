@@ -32,7 +32,7 @@ const getCalc = (julday: number, body: number, flags: number): Promise<any> => {
 }
 
 export async function GET() {
-  for (let i = 0; i < (365 * 5); i++) {
+  for (let i = 0; i < (365 * 30); i++) {
     const testDate = new Date();
     testDate.setUTCDate(testDate.getUTCDate() + i);
     testDate.setUTCHours(12, 0, 0, 0);
