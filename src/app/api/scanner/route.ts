@@ -1,5 +1,5 @@
 import swisseph from 'swisseph';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { evaluateMuhurta } from '@/lib/engine/verdict';
 
@@ -40,7 +40,7 @@ const getHouses = (julday: number, lat: number, lon: number) => {
   });
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const viableWindows: any[] = [];
 
   for (let i = 0; i < 60; i++) {
@@ -96,7 +96,7 @@ export async function GET() {
 
     const verdict = evaluateMuhurta(tithiIndex, dayIndex, karanaIndex, marsHouse, venHouse, nakshatraIndex, 8);
 
-    if (verdict.status === "DESTROYED" || !verdict.isTaraFavorable) continue;
+    if (!["EXCELLENT", "NEUTRAL"].includes(verdict.status) || !verdict.isTaraFavorable) continue;
 
     viableWindows.push({
       date: testDate.toUTCString(),
@@ -105,6 +105,45 @@ export async function GET() {
       vara_index: dayIndex,
       status: verdict.status,
       yoga: verdict.compoundYogaName
+    });
+  }
+
+  const format = request.nextUrl.searchParams.get('format');
+
+  if (format === 'ics') {
+    let icsString = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Jyotish Engine//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH'
+    ].join('\r\n') + '\r\n';
+
+    viableWindows.forEach((win) => {
+      const startDate = new Date(win.date);
+      const endDate = new Date(startDate.getTime() + (60 * 60 * 1000));
+      
+      const formatIcsDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      icsString += [
+        'BEGIN:VEVENT',
+        `UID:${startDate.getTime()}@jyotishengine`,
+        `DTSTAMP:${formatIcsDate(new Date())}`,
+        `DTSTART:${formatIcsDate(startDate)}`,
+        `DTEND:${formatIcsDate(endDate)}`,
+        `SUMMARY:[ ${win.status} ] Jyotish Window`,
+        `DESCRIPTION:Compound Yoga: ${win.yoga}\\nNakshatra Index: ${win.nakshatra_index}\\nTithi Index: ${win.tithi_index}`,
+        'END:VEVENT'
+      ].join('\r\n') + '\r\n';
+    });
+
+    icsString += 'END:VCALENDAR';
+
+    return new NextResponse(icsString, {
+      headers: {
+        'Content-Type': 'text/calendar; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="muhurta.ics"'
+      }
     });
   }
 
