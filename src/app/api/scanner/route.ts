@@ -42,6 +42,10 @@ const getHouses = (julday: number, lat: number, lon: number) => {
 };
 
 export async function GET(request: NextRequest) {
+  const format = request.nextUrl.searchParams.get('format');
+  const activityKey = request.nextUrl.searchParams.get('activity');
+  const activeRule = activityKey && ACTIVITY_LIBRARY[activityKey] ? ACTIVITY_LIBRARY[activityKey] : null;
+
   const viableWindows: any[] = [];
 
   for (let i = 0; i < 60; i++) {
@@ -117,10 +121,6 @@ export async function GET(request: NextRequest) {
       yoga: verdict.compoundYogaName
     });
   }
-
-  const format = request.nextUrl.searchParams.get('format');
-  const activityKey = request.nextUrl.searchParams.get('activity');
-  const activeRule = activityKey && ACTIVITY_LIBRARY[activityKey] ? ACTIVITY_LIBRARY[activityKey] : null;
 
   if (format === 'ics') {
     let icsString = [
