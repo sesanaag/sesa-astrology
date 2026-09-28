@@ -57,13 +57,19 @@ export async function GET() {
     let dayIndex = istTime.getUTCDay();
     if (istTime.getUTCHours() < 6) dayIndex = (dayIndex - 1 + 7) % 7;
 
-    if (dayIndex === 4 && nakshatraIndex === 7) {
+    let luniSolarDiff = (moonLong - sunLong) % 360;
+    if (luniSolarDiff < 0) luniSolarDiff += 360;
+    const tithiIndex = Math.floor(luniSolarDiff / 12);
+    const pakshaTithi = (tithiIndex % 15) + 1;
+
+    if (dayIndex === 1 && nakshatraIndex === 3 && pakshaTithi === 3) {
       return NextResponse.json({
         success: true,
-        target_found: "Guru Pushya Yoga",
+        target_found: "Monday + Rohini + Tritiya",
         utc_timestamp: testDate.toUTCString(),
         moon_degree: moonLong,
-        sun_degree: sunLong
+        sun_degree: sunLong,
+        tithi_index: pakshaTithi
       });
     }
   }
