@@ -1,0 +1,112 @@
+import swisseph from 'swisseph';
+import { NextResponse } from 'next/server';
+import path from 'path';
+import { evaluateMuhurta } from '@/lib/engine/verdict';
+
+swisseph.swe_set_ephe_path(path.join(process.cwd(), 'node_modules/swisseph/ephe'));
+swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
+
+const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => {
+  return new Promise((resolve) => {
+    swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (result: any) => {
+      resolve(typeof result === 'number' ? result : result.julday);
+    });
+  });
+};
+
+const getAyanamsa = (julday: number): Promise<number> => {
+  return new Promise((resolve) => {
+    swisseph.swe_get_ayanamsa_ut(julday, (result: any) => {
+      resolve(typeof result === 'number' ? result : result.ayanamsa);
+    });
+  });
+};
+
+const getCalc = (julday: number, planet: number, flags: number) => {
+  return new Promise((resolve, reject) => {
+    swisseph.swe_calc_ut(julday, planet, flags, (result: any) => {
+      if (result.error) reject(result.error);
+      else resolve(result);
+    });
+  });
+};
+
+const getHouses = (julday: number, lat: number, lon: number) => {
+  return new Promise((resolve, reject) => {
+    swisseph.swe_houses_ex(julday, swisseph.SEFLG_SIDEREAL, lat, lon, 'W', (result: any) => {
+      if (result.error) reject(result.error);
+      else resolve(result);
+    });
+  });
+};
+
+export async function GET() {
+  const viableWindows: any[] = [];
+
+  for (let i = 0; i < 60; i++) {
+    const testDate = new Date();
+    testDate.setUTCDate(testDate.getUTCDate() + i);
+    testDate.setUTCHours(12, 0, 0, 0);
+
+    const year = testDate.getUTCFullYear();
+    const month = testDate.getUTCMonth() + 1;
+    const day = testDate.getUTCDate();
+    const hour = 12;
+
+    const julday = await getJulDay(year, month, day, hour);
+    const ayanamsa = await getAyanamsa(julday);
+
+    const flags = swisseph.SEFLG_SIDEREAL | swisseph.SEFLG_SPEED | swisseph.SEFLG_MOSEPH;
+
+    const moonResult = await getCalc(julday, swisseph.SE_MOON, flags);
+    const moonLong = moonResult.longitude || moonResult[0] || 0;
+
+    const sunResult = await getCalc(julday, swisseph.SE_SUN, flags);
+    const sunLong = sunResult.longitude || sunResult[0] || 0;
+
+    const marsResult = await getCalc(julday, swisseph.SE_MARS, flags);
+    const marsLong = marsResult.longitude || marsResult[0] || 0;
+
+    const venResult = await getCalc(julday, swisseph.SE_VENUS, flags);
+    const venLong = venResult.longitude || venResult[0] || 0;
+
+    const housesResult = await getHouses(julday, 28.6139, 77.2090);
+    const ascTropical = housesResult.ascendant || housesResult.house?.[1] || housesResult[1] || 0;
+    let lagna = (ascTropical - ayanamsa + 360) % 360;
+
+    const lagnaSign = Math.floor(lagna / 30);
+    const marsSign = Math.floor(marsLong / 30);
+    const venSign = Math.floor(venLong / 30);
+    const marsHouse = (marsSign - lagnaSign + 12) % 12 + 1;
+    const venHouse = (venSign - lagnaSign + 12) % 12 + 1;
+
+    const nakshatraIndex = Math.floor(moonLong / (360 / 27));
+
+    const istTime = new Date(testDate.getTime() + (5.5 * 60 * 60 * 1000));
+    let dayIndex = istTime.getUTCDay();
+    if (istTime.getUTCHours() < 6) {
+      dayIndex = (dayIndex - 1 + 7) % 7;
+    }
+
+    let luniSolarDiff = (moonLong - sunLong) % 360;
+    if (luniSolarDiff < 0) luniSolarDiff += 360;
+
+    const tithiIndex = Math.floor(luniSolarDiff / 12);
+    const karanaIndex = Math.floor(luniSolarDiff / 6);
+
+    const verdict = evaluateMuhurta(tithiIndex, dayIndex, karanaIndex, marsHouse, venHouse, nakshatraIndex, 8);
+
+    if (verdict.status === "DESTROYED" || !verdict.isTaraFavorable) continue;
+
+    viableWindows.push({
+      date: testDate.toUTCString(),
+      tithi_index: tithiIndex,
+      nakshatra_index: nakshatraIndex,
+      vara_index: dayIndex,
+      status: verdict.status,
+      yoga: verdict.compoundYogaName
+    });
+  }
+
+  return NextResponse.json({ scanned_days: 60, viable_windows: viableWindows });
+}
