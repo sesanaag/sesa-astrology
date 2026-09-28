@@ -2,6 +2,7 @@ import swisseph from 'swisseph';
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { evaluateMuhurta } from '@/lib/engine/verdict';
+import { ACTIVITY_LIBRARY } from '@/lib/engine/activities';
 
 swisseph.swe_set_ephe_path(path.join(process.cwd(), 'node_modules/swisseph/ephe'));
 swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
@@ -98,6 +99,15 @@ export async function GET(request: NextRequest) {
 
     if (!["EXCELLENT", "NEUTRAL"].includes(verdict.status) || !verdict.isTaraFavorable) continue;
 
+    const pakshaTithi = (tithiIndex % 15) + 1;
+    if (activeRule) {
+      if (!activeRule.varas.includes(dayIndex) || 
+          !activeRule.tithis.includes(pakshaTithi) || 
+          !activeRule.nakshatras.includes(nakshatraIndex)) {
+        continue;
+      }
+    }
+
     viableWindows.push({
       date: testDate.toUTCString(),
       tithi_index: tithiIndex,
@@ -109,6 +119,8 @@ export async function GET(request: NextRequest) {
   }
 
   const format = request.nextUrl.searchParams.get('format');
+  const activityKey = request.nextUrl.searchParams.get('activity');
+  const activeRule = activityKey && ACTIVITY_LIBRARY[activityKey] ? ACTIVITY_LIBRARY[activityKey] : null;
 
   if (format === 'ics') {
     let icsString = [
@@ -131,7 +143,7 @@ export async function GET(request: NextRequest) {
         `DTSTAMP:${formatIcsDate(new Date())}`,
         `DTSTART:${formatIcsDate(startDate)}`,
         `DTEND:${formatIcsDate(endDate)}`,
-        `SUMMARY:[ ${win.status} ] Jyotish Window`,
+        `SUMMARY:[ ${win.status} ]${activeRule ? activeRule.name : 'Jyotish'} Window`,
         `DESCRIPTION:Compound Yoga: ${win.yoga}\\nNakshatra Index: ${win.nakshatra_index}\\nTithi Index: ${win.tithi_index}`,
         'END:VEVENT'
       ].join('\r\n') + '\r\n';
