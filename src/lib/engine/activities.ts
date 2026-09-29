@@ -53,5 +53,11 @@ export const ACTIVITY_LIBRARY: Record<string, ActivityRule> = {
     varas: [0, 1, 3, 4, 5],
     tithis: [2, 3, 5, 6, 7, 10, 11, 12, 13],
     nakshatras: [0, 4, 5, 6, 7, 12, 13, 14, 21, 22, 23, 26]
+  },
+  "paying_debts": {
+    name: "Paying Debts",
+    varas: [0, 1, 2, 4, 5, 6],
+    tithis: [4, 9, 14],
+    nakshatras: [0, 7, 8, 15, 24]
   }
 };
