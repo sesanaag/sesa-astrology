@@ -99,7 +99,8 @@ export async function GET(request: NextRequest) {
     const tithiIndex = Math.floor(luniSolarDiff / 12);
     const karanaIndex = Math.floor(luniSolarDiff / 6);
 
-    const verdict = evaluateMuhurta(tithiIndex, dayIndex, karanaIndex, marsHouse, venHouse, nakshatraIndex, 8);
+    const userNatalStar = parseInt(request.nextUrl.searchParams.get('natal_nakshatra') || '8', 10);
+    const verdict = evaluateMuhurta(tithiIndex, dayIndex, karanaIndex, marsHouse, venHouse, nakshatraIndex, userNatalStar);
 
     if (!["EXCELLENT", "NEUTRAL"].includes(verdict.status) || !verdict.isTaraFavorable) continue;
 
