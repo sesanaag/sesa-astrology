@@ -65,19 +65,19 @@ export async function GET(request: NextRequest) {
 
     const flags = swisseph.SEFLG_SIDEREAL | swisseph.SEFLG_SPEED | swisseph.SEFLG_MOSEPH;
 
-    const moonResult = await getCalc(julday, swisseph.SE_MOON, flags);
+    const moonResult: any = await getCalc(julday, swisseph.SE_MOON, flags);
     const moonLong = moonResult.longitude || moonResult[0] || 0;
 
-    const sunResult = await getCalc(julday, swisseph.SE_SUN, flags);
+    const sunResult: any = await getCalc(julday, swisseph.SE_SUN, flags);
     const sunLong = sunResult.longitude || sunResult[0] || 0;
 
-    const marsResult = await getCalc(julday, swisseph.SE_MARS, flags);
+    const marsResult: any = await getCalc(julday, swisseph.SE_MARS, flags);
     const marsLong = marsResult.longitude || marsResult[0] || 0;
 
-    const venResult = await getCalc(julday, swisseph.SE_VENUS, flags);
+    const venResult: any = await getCalc(julday, swisseph.SE_VENUS, flags);
     const venLong = venResult.longitude || venResult[0] || 0;
 
-    const housesResult = await getHouses(julday, 28.6139, 77.2090);
+    const housesResult: any = await getHouses(julday, 28.6139, 77.2090);
     const ascTropical = housesResult.ascendant || housesResult.house?.[1] || housesResult[1] || 0;
     let lagna = (ascTropical - ayanamsa + 360) % 360;
 

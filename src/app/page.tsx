@@ -51,22 +51,22 @@ export default async function JyotishMVP() {
   const ayanamsa = await getAyanamsa(julday);
 
   const moonFlags = swisseph.SEFLG_SIDEREAL | swisseph.SEFLG_SPEED | swisseph.SEFLG_MOSEPH;
-  const moonResult = await getCalc(julday, swisseph.SE_MOON, moonFlags);
+  const moonResult: any = await getCalc(julday, swisseph.SE_MOON, moonFlags);
   const moonLong = moonResult.longitude || moonResult[0] || 0;
 
-  const sunResult = await getCalc(julday, swisseph.SE_SUN, moonFlags);
+  const sunResult: any = await getCalc(julday, swisseph.SE_SUN, moonFlags);
   const sunLong = sunResult.longitude || sunResult[0] || 0;
 
-  const jupResult = await getCalc(julday, swisseph.SE_JUPITER, moonFlags);
+  const jupResult: any = await getCalc(julday, swisseph.SE_JUPITER, moonFlags);
   const jupLong = jupResult.longitude || jupResult[0] || 0;
 
-  const venResult = await getCalc(julday, swisseph.SE_VENUS, moonFlags);
+  const venResult: any = await getCalc(julday, swisseph.SE_VENUS, moonFlags);
   const venLong = venResult.longitude || venResult[0] || 0;
 
-  const marsResult = await getCalc(julday, swisseph.SE_MARS, moonFlags);
+  const marsResult: any = await getCalc(julday, swisseph.SE_MARS, moonFlags);
   const marsLong = marsResult.longitude || marsResult[0] || 0;
 
-  const housesResult = await getHouses(julday, lat, lon, 'P');
+  const housesResult: any = await getHouses(julday, lat, lon, 'P');
   const ascTropical = housesResult.ascendant || housesResult.house?.[1] || housesResult[1] || 0;
   let lagna = (ascTropical - ayanamsa + 360) % 360;
 
