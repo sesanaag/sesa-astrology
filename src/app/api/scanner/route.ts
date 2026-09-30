@@ -42,6 +42,8 @@ const getHouses = (julday: number, lat: number, lon: number) => {
 };
 
 export async function GET(request: NextRequest) {
+  const startDateParam = request.nextUrl.searchParams.get('startDate');
+  const BASE_DATE = startDateParam ? new Date(startDateParam) : new Date(Date.now());
   const format = request.nextUrl.searchParams.get('format');
   const activityKey = request.nextUrl.searchParams.get('activity');
   const activeRule = activityKey && ACTIVITY_LIBRARY[activityKey] ? ACTIVITY_LIBRARY[activityKey] : null;
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
   const viableWindows: any[] = [];
 
   for (let i = 0; i < 60; i++) {
-    const testDate = new Date();
+    const testDate = new Date(BASE_DATE);
     testDate.setUTCDate(testDate.getUTCDate() + i);
     testDate.setUTCHours(12, 0, 0, 0);
 
@@ -141,7 +143,7 @@ export async function GET(request: NextRequest) {
       icsString += [
         'BEGIN:VEVENT',
         `UID:${startDate.getTime()}@jyotishengine`,
-        `DTSTAMP:${formatIcsDate(new Date())}`,
+        `DTSTAMP:${formatIcsDate(new Date(BASE_DATE))}`,
         `DTSTART:${formatIcsDate(startDate)}`,
         `DTEND:${formatIcsDate(endDate)}`,
         `SUMMARY:[ ${win.status} ]${activeRule ? activeRule.name : 'Jyotish'} Window`,
