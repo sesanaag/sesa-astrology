@@ -25,6 +25,9 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
+  },
+  "overrides": {
+    "node-gyp": "^10.1.0"
   }
 }
