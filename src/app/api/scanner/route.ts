@@ -4,8 +4,6 @@ import path from 'path';
 import { ACTIVITY_LIBRARY } from '@/lib/engine/activities';
 
 // Initialize Ephemeris
-swisseph.swe_set_ephe_path(path.join(process.cwd(), 'node_modules/swisseph/ephe'));
-swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
 
 const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => {
   return new Promise((resolve) => swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (r: any) => resolve(r.julday || r)));
@@ -16,6 +14,9 @@ const getCalc = (julday: number, planet: number, flags: number): Promise<any> =>
 
 export async function GET(request: NextRequest) {
   try {
+    swisseph.swe_set_ephe_path(path.join(process.cwd(), 'node_modules', 'swisseph', 'ephe'));
+  swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
+
     const activityKey = request.nextUrl.searchParams.get('activity');
     const natalStar = parseInt(request.nextUrl.searchParams.get('natal_nakshatra') || '11', 10);
     const startDateParam = request.nextUrl.searchParams.get('startDate');

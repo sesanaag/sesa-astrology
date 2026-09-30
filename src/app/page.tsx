@@ -45,8 +45,7 @@ export default async function JyotishMVP() {
   const lat = 28.6139;
   const lon = 77.2090;
 
-  swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
-
+  
   const julday = await getJulDay(year, month, day, hour);
   const ayanamsa = await getAyanamsa(julday);
 

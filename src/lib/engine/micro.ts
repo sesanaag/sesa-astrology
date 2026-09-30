@@ -2,8 +2,6 @@ import swisseph from 'swisseph';
 import path from 'path';
 import { ACTIVITY_LIBRARY } from './activities';
 
-swisseph.swe_set_ephe_path(path.join(process.cwd(), 'node_modules/swisseph/ephe'));
-swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
 
 const RASI_NAMES = [
   "Aries (Mesha)", "Taurus (Vrishabha)", "Gemini (Mithuna)", "Cancer (Karka)", 
@@ -29,6 +27,9 @@ const getHouses = (julday: number, lat: number, lon: number): Promise<any> => {
 
 // THIS IS THE FUNCTION THE AI AGENT WILL CALL
 export async function scanMicroTimeline(dateStr: string, activityKey: string, lat: number, lon: number) {
+    swisseph.swe_set_ephe_path(path.join(process.cwd(), 'node_modules', 'swisseph', 'ephe'));
+  swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
+
   const activeRule = ACTIVITY_LIBRARY[activityKey];
   if (!activeRule) throw new Error("Invalid activity rule");
 
