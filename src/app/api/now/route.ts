@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import swisseph from 'swisseph';
 import path from 'path';
 
-const NAKSHATRAS = ["Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Svati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"];
-const YOGAS = ["Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma", "Dhriti", "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyan", "Parigha", "Shiva", "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti"];
-const KARANAS = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti", "Shakuni", "Chatushpada", "Naga", "Kintughna"];
+const IAST_NAKSHATRAS = ["Aśvinī", "Bharaṇī", "Kṛttikā", "Rohiṇī", "Mṛgaśīrṣa", "Ārdrā", "Punarvasu", "Puṣya", "Āśleṣā", "Maghā", "Pūrva Phalgunī", "Uttara Phalgunī", "Hasta", "Citrā", "Svātī", "Viśākhā", "Anurādhā", "Jyeṣṭhā", "Mūla", "Pūrvāṣāḍhā", "Uttarāṣāḍhā", "Śravaṇa", "Dhaniṣṭhā", "Śatabhiṣak", "Pūrva Bhādrapadā", "Uttara Bhādrapadā", "Revatī"];
+const YOGAS = ["Viṣkambha", "Prīti", "Āyuṣmān", "Saubhāgya", "Śobhana", "Atigaṇḍa", "Sukarman", "Dhṛti", "Śūla", "Gaṇḍa", "Vṛddhi", "Dhruva", "Vyāghāta", "Harṣaṇa", "Vajra", "Siddhi", "Vyatīpāta", "Varīyas", "Parigha", "Śiva", "Siddha", "Sādhya", "Śubha", "Śukla", "Brahman", "Aindra", "Vaidhṛti"];
+const KARANAS = ["Bava", "Bālava", "Kaulava", "Taitila", "Gara", "Vaṇija", "Viṣṭi", "Śakuni", "Catuṣpāda", "Nāga", "Kiṃstughna"];
 const RASI_NAMES = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+const IAST_TITHIS = ["Pratipat", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañcamī", "Ṣaṣṭhī", "Saptamī", "Aṣṭamī", "Navamī", "Daśamī", "Ekādaśī", "Dvādaśī", "Trayodaśī", "Caturdaśī", "Pūrṇimā"];
 
 const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => new Promise(r => swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (res: any) => r(res.julday || res)));
 const getAyanamsa = (julday: number): Promise<number> => new Promise(r => swisseph.swe_get_ayanamsa_ut(julday, (res: any) => r(res.ayanamsa || res)));
@@ -48,10 +49,10 @@ export async function GET(request: NextRequest) {
     const ascTropical = housesRes.ascendant || housesRes.house?.[1] || housesRes[1] || 0;
     const ascSidereal = (ascTropical - ayanamsa + 360) % 360;
 
-    // Panchanga Calculations
     const diff = (moonLong - sunLong + 360) % 360;
     const tithiNum = Math.floor(diff / 12) + 1;
-    const tithiType = tithiNum <= 15 ? `Shukla ${tithiNum}` : `Krishna ${tithiNum - 15}`;
+    const tithiName = tithiNum === 30 ? "Amāvasyā" : IAST_TITHIS[(tithiNum - 1) % 15];
+    const tithiType = tithiNum <= 15 ? `Śukla ${tithiName}` : `Kṛṣṇa ${tithiName}`;
     
     const karanaNum = Math.floor(diff / 6) + 1;
     const karanaIndex = karanaNum === 1 ? 10 : karanaNum > 57 ? karanaNum - 50 : (karanaNum - 2) % 7;
@@ -62,11 +63,10 @@ export async function GET(request: NextRequest) {
     const yogaName = YOGAS[yogaIndex] || "Unknown";
 
     const nakIndex = Math.floor(moonLong / (360 / 27));
-    const nakName = NAKSHATRAS[nakIndex] || "Unknown";
+    const nakName = IAST_NAKSHATRAS[nakIndex] || "Unknown";
     const nakProgress = ((moonLong % (360 / 27)) / (360 / 27)) * 100;
 
-    // Assessment Engine
-    let assessment = "[ NEUTRAL ] Standard Muhurta conditions prevailing.";
+    let assessment = "[ NEUTRAL ] Standard Muhūrta conditions prevailing.";
     let status = "neutral";
     const riktaTithis = [4, 9, 14, 19, 24, 29];
 
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       assessment = `[ WARNING ] Rikta (Empty) Tithi active. Avoid initiating auspicious events.`;
       status = "warning";
     } else if (karanaIndex === 6) {
-      assessment = `[ DANGER ] Vishti Karana (Bhadra) is active. Highly malefic for most activities.`;
+      assessment = `[ DANGER ] Viṣṭi Karana (Bhadra) is active. Highly malefic for most activities.`;
       status = "danger";
     } else if (yogaIndex === 16 || yogaIndex === 26) {
       assessment = `[ WARNING ] Malefic Yoga (${yogaName}) active. Delays and obstacles likely.`;

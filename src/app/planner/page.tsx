@@ -11,9 +11,13 @@ const ACTIVITIES = [
   { id: 'hair_cutting', label: 'Hair & Beard Cutting' },
   { id: 'nail_cutting', label: 'Nail Cutting' },
   { id: 'oil_bath', label: 'Oil Bath (Abhyanga)' },
-  { id: 'education', label: 'Education / Vidya' },
+  { id: 'education', label: 'Education / Vidyā' },
   { id: 'paying_debts', label: 'Paying Debts' }
 ];
+
+const IAST_VARAS = ["Ravivāra", "Somavāra", "Maṅgalavāra", "Budhavāra", "Guruvāra", "Śukravāra", "Śanivāra"];
+const IAST_TITHIS = ["Pratipat", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañcamī", "Ṣaṣṭhī", "Saptamī", "Aṣṭamī", "Navamī", "Daśamī", "Ekādaśī", "Dvādaśī", "Trayodaśī", "Caturdaśī", "Pūrṇimā"];
+const IAST_NAKSHATRAS = ["Aśvinī", "Bharaṇī", "Kṛttikā", "Rohiṇī", "Mṛgaśīrṣa", "Ārdrā", "Punarvasu", "Puṣya", "Āśleṣā", "Maghā", "Pūrva Phalgunī", "Uttara Phalgunī", "Hasta", "Citrā", "Svātī", "Viśākhā", "Anurādhā", "Jyeṣṭhā", "Mūla", "Pūrvāṣāḍhā", "Uttarāṣāḍhā", "Śravaṇa", "Dhaniṣṭhā", "Śatabhiṣak", "Pūrva Bhādrapadā", "Uttara Bhādrapadā", "Revatī"];
 
 export default function Planner() {
   const [mounted, setMounted] = useState(false);
@@ -77,13 +81,11 @@ export default function Planner() {
     if (mounted && lat && lon && startDate) fetchWindows(activity, startDate);
   }, [activity, lat, lon, startDate, mounted]);
 
-  // Prevent hydration mismatch by returning a skeleton until the client timezone is confirmed
   if (!mounted) return <div className="min-h-screen bg-[#FAF9F6]"></div>;
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#1A2E26] font-sans font-light relative selection:bg-[#00FBB0] selection:text-[#021F1E]">
       
-      {/* SETTINGS MODAL */}
       {showSettings && (
         <div className="fixed inset-0 bg-[#021F1E]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="p-10 rounded-none bg-[#063736] max-w-md w-full shadow-2xl relative border border-[#00FBB0]/20">
@@ -99,7 +101,7 @@ export default function Planner() {
                 <input type="text" value={lon} onChange={e => setLon(e.target.value)} className="w-full bg-[#021F1E] border-none rounded-none px-4 py-3 text-[#FAF9F6] focus:outline-none focus:ring-1 focus:ring-[#00FBB0] transition-shadow" />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-2 text-[#89CFF0] uppercase tracking-widest">Natal Nakshatra Index (0-26)</label>
+                <label className="block text-xs font-medium mb-2 text-[#89CFF0] uppercase tracking-widest">Natal Nakṣatra Index (0-26)</label>
                 <input type="text" value={natalStar} onChange={e => setNatalStar(e.target.value)} className="w-full bg-[#021F1E] border-none rounded-none px-4 py-3 text-[#FAF9F6] focus:outline-none focus:ring-1 focus:ring-[#00FBB0] transition-shadow" />
               </div>
             </div>
@@ -108,7 +110,6 @@ export default function Planner() {
         </div>
       )}
 
-      {/* DARK TEAL HEADER */}
       <div className="bg-[#021F1E] border-b-2 border-[#D4AF37]/30 shadow-lg relative z-10 w-full">
         <header className="max-w-5xl mx-auto px-8 py-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
@@ -119,23 +120,23 @@ export default function Planner() {
               Configure GPS & Natal Profile
             </button>
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <input 
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-[#063736] border border-[#00FBB0]/30 text-[#FAF9F6] font-medium px-4 py-2.5 rounded-none focus:outline-none focus:border-[#D4AF37] w-full md:w-auto cursor-pointer text-sm tracking-wide transition-colors"
+              className="bg-[#063736] border border-[#00FBB0]/30 text-[#FAF9F6] font-medium px-4 py-2.5 rounded-none focus:outline-none focus:border-[#D4AF37] w-full sm:w-auto cursor-pointer text-sm tracking-wide transition-colors"
             />
             <select 
               value={activity}
               onChange={(e) => setActivity(e.target.value)}
-              className="bg-[#063736] border border-[#00FBB0]/30 text-[#FAF9F6] font-medium px-4 py-2.5 rounded-none focus:outline-none focus:border-[#D4AF37] cursor-pointer w-full md:w-auto text-sm tracking-wide transition-colors appearance-none"
+              className="bg-[#063736] border border-[#00FBB0]/30 text-[#FAF9F6] font-medium px-4 py-2.5 rounded-none focus:outline-none focus:border-[#D4AF37] cursor-pointer w-full sm:w-auto text-sm tracking-wide transition-colors appearance-none"
             >
               {ACTIVITIES.map(act => <option key={act.id} value={act.id}>{act.label}</option>)}
             </select>
             <a 
               href={`/api/scanner?activity=${activity}&natal_nakshatra=${natalStar}&startDate=${startDate}&format=ics`}
-              className="bg-[#0A4A49] text-[#00FBB0] hover:bg-[#00FBB0] hover:text-[#021F1E] px-6 py-2.5 rounded-none transition-colors flex items-center font-bold tracking-[0.2em] whitespace-nowrap uppercase text-[10px] shadow-sm"
+              className="bg-[#0A4A49] text-[#00FBB0] hover:bg-[#00FBB0] hover:text-[#021F1E] px-6 py-2.5 rounded-none transition-colors flex justify-center items-center font-bold tracking-[0.2em] whitespace-nowrap uppercase text-[10px] shadow-sm w-full sm:w-auto"
             >
               Export .ICS
             </a>
@@ -143,10 +144,8 @@ export default function Planner() {
         </header>
       </div>
 
-      {/* CREAM BODY CONTENT */}
       <div className="max-w-5xl mx-auto px-8 py-10">
         
-        {/* SUCCESS CRITERIA PANEL */}
         <div className="mb-10 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border border-[#E0E7E7]">
           <div 
             className="flex justify-between items-center p-6 cursor-pointer hover:bg-[#FAF9F6] transition-colors"
@@ -194,11 +193,7 @@ export default function Planner() {
                   <div 
                     key={idx} 
                     className={`p-6 text-sm flex flex-col justify-between transition-colors ${
-                      hasCombo 
-                        ? 'bg-[#FCFBF4]' 
-                        : isFav 
-                          ? 'bg-white' 
-                          : 'bg-[#FAF9F6] opacity-60'
+                      hasCombo ? 'bg-[#FCFBF4]' : isFav ? 'bg-white' : 'bg-[#FAF9F6] opacity-60'
                     }`}
                   >
                     <div>
@@ -241,29 +236,29 @@ export default function Planner() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {windows.map((win, idx) => {
               const displayDate = new Date(win.date).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
+              
+              const varaName = IAST_VARAS[win.vara_index];
+              const tithiName = win.tithi_index === 30 ? "Amāvasyā" : IAST_TITHIS[(win.tithi_index - 1) % 15];
+              const paksa = win.tithi_index <= 15 ? 'Śukla' : 'Kṛṣṇa';
+              const nakName = IAST_NAKSHATRAS[win.nakshatra_index];
+
               return (
                 <div key={idx} className="bg-white p-7 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border border-[#E0E7E7]/50 hover:border-[#0D5C58]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group duration-300">
                   <div>
                     <div className="flex justify-between items-center mb-8">
                       <h2 className="font-medium text-lg text-[#1A2E26] tracking-wide uppercase">{displayDate}</h2>
                       {win.status === 'EXCELLENT' ? (
-                        <span className="text-[10px] text-[#0D5C58] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">
-                          Excellent
-                        </span>
+                        <span className="text-[10px] text-[#0D5C58] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">Excellent</span>
+                      ) : win.status === 'OPTIMAL' ? (
+                        <span className="text-[10px] text-[#D4AF37] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">✦ Optimal</span>
                       ) : (
-                        <span className="text-[10px] text-[#D4AF37] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">
-                          ✦ Optimal
-                        </span>
+                        <span className="text-[10px] text-[#7A8B8C] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">Neutral</span>
                       )}
                     </div>
                     <div className="space-y-4 text-[11px] mb-8 text-[#7A8B8C] font-medium tracking-[0.15em] uppercase">
-                      <div className="flex justify-between items-center"><span>Vara</span><span className="text-[#1A2E26]">{win.vara_index}</span></div>
-                      <div className="flex justify-between items-center"><span>Tithi</span><span className="text-[#1A2E26]">{win.tithi_index}</span></div>
-                      <div className="flex justify-between items-center"><span>Nakshatra</span><span className="text-[#1A2E26]">{win.nakshatra_index}</span></div>
-                      <div className="flex justify-between items-center pt-4 border-t border-[#E0E7E7]">
-                        <span>Yoga</span>
-                        <span className="text-[#0D5C58]">{win.yoga}</span>
-                      </div>
+                      <div className="flex justify-between items-center"><span>Vāra</span><span className="text-[#1A2E26]">{varaName}</span></div>
+                      <div className="flex justify-between items-center"><span>Tithi</span><span className="text-[#1A2E26]">{paksa} {tithiName}</span></div>
+                      <div className="flex justify-between items-center"><span>Nakṣatra</span><span className="text-[#1A2E26]">{nakName}</span></div>
                     </div>
                   </div>
                   <button 

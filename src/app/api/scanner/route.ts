@@ -3,8 +3,6 @@ import swisseph from 'swisseph';
 import path from 'path';
 import { ACTIVITY_LIBRARY } from '@/lib/engine/activities';
 
-// Initialize Ephemeris
-
 const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => {
   return new Promise((resolve) => swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (r: any) => resolve(r.julday || r)));
 };
@@ -15,7 +13,7 @@ const getCalc = (julday: number, planet: number, flags: number): Promise<any> =>
 export async function GET(request: NextRequest) {
   try {
     swisseph.swe_set_ephe_path(path.join(process.cwd(), 'node_modules', 'swisseph', 'ephe'));
-  swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
+    swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI, 0, 0);
 
     const activityKey = request.nextUrl.searchParams.get('activity');
     const natalStar = parseInt(request.nextUrl.searchParams.get('natal_nakshatra') || '11', 10);
@@ -35,7 +33,7 @@ export async function GET(request: NextRequest) {
     for (let i = 0; i < 60; i++) {
       const scanDate = new Date(BASE_DATE);
       scanDate.setUTCDate(scanDate.getUTCDate() + i);
-      scanDate.setUTCHours(12, 0, 0, 0); // Scan at noon UTC
+      scanDate.setUTCHours(12, 0, 0, 0);
 
       const y = scanDate.getUTCFullYear();
       const m = scanDate.getUTCMonth() + 1;
@@ -53,55 +51,51 @@ export async function GET(request: NextRequest) {
       const nakshatraIndex = Math.floor(moonLong / (360 / 27));
       const varaIndex = scanDate.getUTCDay();
 
-      // Check against classical criteria
       const isVaraFav = activeRule.varas.includes(varaIndex);
       const isTithiFav = activeRule.tithis.includes(tithiIndex) || activeRule.tithis.includes(tithiIndex % 15 || 15);
       const isNakFav = activeRule.nakshatras.includes(nakshatraIndex);
 
-      // Tara Bala check (Filter out Vipat, Pratyak, Naidhana)
       const tara = (nakshatraIndex - natalStar + 27) % 27;
       const taraBala = tara % 9;
       const isTaraFav = ![2, 4, 6].includes(taraBala);
 
-      if (isVaraFav && isTithiFav && isNakFav && isTaraFav) {
+      let score = 0;
+      if (isVaraFav) score++;
+      if (isTithiFav) score++;
+      if (isNakFav) score++;
+      if (isTaraFav) score++;
+
+      let status = '';
+      if (score === 4) status = 'EXCELLENT';
+      else if (score === 3) status = 'OPTIMAL';
+      else if (score === 2) status = 'NEUTRAL';
+
+      if (score >= 2) {
         windows.push({
           date: scanDate.toISOString(),
           vara_index: varaIndex,
           tithi_index: tithiIndex,
           nakshatra_index: nakshatraIndex,
           yoga: 'Siddhi',
-          status: 'EXCELLENT'
+          status: status
         });
       }
     }
 
-    // Handle Export ICS Request
     if (format === 'ics') {
       let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nCALSCALE:GREGORIAN\r\n";
       for (const w of windows) {
+        if (w.status === 'NEUTRAL') continue; 
         const dt = w.date.replace(/[-:]/g, '').split('.')[0] + 'Z';
         ics += `BEGIN:VEVENT\r\nDTSTART:${dt}\r\nDTEND:${dt}\r\nSUMMARY:Jyotish Window: ${activityKey}\r\nEND:VEVENT\r\n`;
       }
       ics += "END:VCALENDAR\r\n";
-      
-      return new NextResponse(ics, {
-        headers: {
-          'Content-Type': 'text/calendar',
-          'Content-Disposition': `attachment; filename="jyotish_${activityKey}.ics"`
-        }
-      });
+      return new NextResponse(ics, { headers: { 'Content-Type': 'text/calendar', 'Content-Disposition': `attachment; filename="jyotish_${activityKey}.ics"` } });
     }
 
-    // Default JSON Response for the UI
     return NextResponse.json({ viable_windows: windows });
 
   } catch (error: any) {
-    // If it crashes, send the exact stack trace back to the browser!
-    console.error("Scanner Error:", error);
-    return NextResponse.json({ 
-      error: "API Crash", 
-      message: error.message || String(error),
-      stack: error.stack
-    }, { status: 500 });
+    return NextResponse.json({ error: "API Crash", message: error.message || String(error) }, { status: 500 });
   }
 }
