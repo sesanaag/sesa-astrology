@@ -16,7 +16,7 @@ const ACTIVITIES = [
 ];
 
 const IAST_VARAS = ["Ravivāra", "Somavāra", "Maṅgalavāra", "Budhavāra", "Guruvāra", "Śukravāra", "Śanivāra"];
-const IAST_TITHIS = ["Pratipat", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañcamī", "Ṣaṣṭhī", "Saptamī", "Aṣṭamī", "Navamī", "Daśamī", "Ekādaśī", "Dvādaśī", "Trayodaśī", "Caturdaśī", "Pūrṇimā"];
+const IAST_TITHIS = ["Pratipat", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañcamī", "Ṣaṣṭhī", "Saptamī", "Aṣṭamī", "Navamī", "Daśamī", "Ekādaśī", "Dvādaśī", "Trayodaśī", "Caturdaśī"];
 const IAST_NAKSHATRAS = ["Aśvinī", "Bharaṇī", "Kṛttikā", "Rohiṇī", "Mṛgaśīrṣa", "Ārdrā", "Punarvasu", "Puṣya", "Āśleṣā", "Maghā", "Pūrva Phalgunī", "Uttara Phalgunī", "Hasta", "Citrā", "Svātī", "Viśākhā", "Anurādhā", "Jyeṣṭhā", "Mūla", "Pūrvāṣāḍhā", "Uttarāṣāḍhā", "Śravaṇa", "Dhaniṣṭhā", "Śatabhiṣak", "Pūrva Bhādrapadā", "Uttara Bhādrapadā", "Revatī"];
 
 export default function Planner() {
@@ -80,6 +80,11 @@ export default function Planner() {
   useEffect(() => {
     if (mounted && lat && lon && startDate) fetchWindows(activity, startDate);
   }, [activity, lat, lon, startDate, mounted]);
+
+  const getSuffix = (n: number) => {
+    if (n >= 11 && n <= 13) return 'th';
+    switch (n % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; }
+  };
 
   if (!mounted) return <div className="min-h-screen bg-[#FAF9F6]"></div>;
 
@@ -238,8 +243,18 @@ export default function Planner() {
               const displayDate = new Date(win.date).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
               
               const varaName = IAST_VARAS[win.vara_index];
-              const tithiName = win.tithi_index === 30 ? "Amāvasyā" : IAST_TITHIS[(win.tithi_index - 1) % 15];
+              const tithiPhaseNum = win.tithi_index <= 15 ? win.tithi_index : win.tithi_index - 15;
               const paksa = win.tithi_index <= 15 ? 'Śukla' : 'Kṛṣṇa';
+              
+              let tithiName = "";
+              if (win.tithi_index === 15) tithiName = "Pūrṇimā";
+              else if (win.tithi_index === 30) tithiName = "Amāvasyā";
+              else tithiName = IAST_TITHIS[tithiPhaseNum - 1];
+              
+              const displayTithi = (win.tithi_index === 15 || win.tithi_index === 30) 
+                  ? `${tithiName} (${tithiPhaseNum}${getSuffix(tithiPhaseNum)})` 
+                  : `${tithiName} ${paksa} Pakṣa (${tithiPhaseNum}${getSuffix(tithiPhaseNum)})`;
+
               const nakName = IAST_NAKSHATRAS[win.nakshatra_index];
 
               return (
@@ -257,7 +272,7 @@ export default function Planner() {
                     </div>
                     <div className="space-y-4 text-[11px] mb-8 text-[#7A8B8C] font-medium tracking-[0.15em] uppercase">
                       <div className="flex justify-between items-center"><span>Vāra</span><span className="text-[#1A2E26]">{varaName}</span></div>
-                      <div className="flex justify-between items-center"><span>Tithi</span><span className="text-[#1A2E26]">{paksa} {tithiName}</span></div>
+                      <div className="flex justify-between items-center"><span>Tithi</span><span className="text-[#1A2E26]">{displayTithi}</span></div>
                       <div className="flex justify-between items-center"><span>Nakṣatra</span><span className="text-[#1A2E26]">{nakName}</span></div>
                     </div>
                   </div>

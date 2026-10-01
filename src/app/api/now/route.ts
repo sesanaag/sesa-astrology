@@ -6,7 +6,7 @@ const IAST_NAKSHATRAS = ["Aśvinī", "Bharaṇī", "Kṛttikā", "Rohiṇī", "M
 const YOGAS = ["Viṣkambha", "Prīti", "Āyuṣmān", "Saubhāgya", "Śobhana", "Atigaṇḍa", "Sukarman", "Dhṛti", "Śūla", "Gaṇḍa", "Vṛddhi", "Dhruva", "Vyāghāta", "Harṣaṇa", "Vajra", "Siddhi", "Vyatīpāta", "Varīyas", "Parigha", "Śiva", "Siddha", "Sādhya", "Śubha", "Śukla", "Brahman", "Aindra", "Vaidhṛti"];
 const KARANAS = ["Bava", "Bālava", "Kaulava", "Taitila", "Gara", "Vaṇija", "Viṣṭi", "Śakuni", "Catuṣpāda", "Nāga", "Kiṃstughna"];
 const RASI_NAMES = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
-const IAST_TITHIS = ["Pratipat", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañcamī", "Ṣaṣṭhī", "Saptamī", "Aṣṭamī", "Navamī", "Daśamī", "Ekādaśī", "Dvādaśī", "Trayodaśī", "Caturdaśī", "Pūrṇimā"];
+const IAST_TITHIS = ["Pratipat", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañcamī", "Ṣaṣṭhī", "Saptamī", "Aṣṭamī", "Navamī", "Daśamī", "Ekādaśī", "Dvādaśī", "Trayodaśī", "Caturdaśī"];
 
 const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => new Promise(r => swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (res: any) => r(res.julday || res)));
 const getAyanamsa = (julday: number): Promise<number> => new Promise(r => swisseph.swe_get_ayanamsa_ut(julday, (res: any) => r(res.ayanamsa || res)));
@@ -19,6 +19,11 @@ const formatDeg = (deg: number) => {
   const d = Math.floor(signDeg);
   const m = Math.floor((signDeg - d) * 60);
   return `${d}° ${m}' in ${RASI_NAMES[signIndex]}`;
+};
+
+const getSuffix = (n: number) => {
+  if (n >= 11 && n <= 13) return 'th';
+  switch (n % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; }
 };
 
 export async function GET(request: NextRequest) {
@@ -51,8 +56,17 @@ export async function GET(request: NextRequest) {
 
     const diff = (moonLong - sunLong + 360) % 360;
     const tithiNum = Math.floor(diff / 12) + 1;
-    const tithiName = tithiNum === 30 ? "Amāvasyā" : IAST_TITHIS[(tithiNum - 1) % 15];
-    const tithiType = tithiNum <= 15 ? `Śukla ${tithiName}` : `Kṛṣṇa ${tithiName}`;
+    const tithiPhaseNum = tithiNum <= 15 ? tithiNum : tithiNum - 15;
+    const phase = tithiNum <= 15 ? 'Śukla' : 'Kṛṣṇa';
+    
+    let tithiName = "";
+    if (tithiNum === 15) tithiName = "Pūrṇimā";
+    else if (tithiNum === 30) tithiName = "Amāvasyā";
+    else tithiName = IAST_TITHIS[tithiPhaseNum - 1];
+
+    const tithiDisplay = (tithiNum === 15 || tithiNum === 30) 
+        ? `${tithiName} (${tithiPhaseNum}${getSuffix(tithiPhaseNum)})` 
+        : `${tithiName} ${phase} Pakṣa (${tithiPhaseNum}${getSuffix(tithiPhaseNum)})`;
     
     const karanaNum = Math.floor(diff / 6) + 1;
     const karanaIndex = karanaNum === 1 ? 10 : karanaNum > 57 ? karanaNum - 50 : (karanaNum - 2) % 7;
@@ -71,10 +85,10 @@ export async function GET(request: NextRequest) {
     const riktaTithis = [4, 9, 14, 19, 24, 29];
 
     if (riktaTithis.includes(tithiNum)) {
-      assessment = `[ WARNING ] Rikta (Empty) Tithi active. Avoid initiating auspicious events.`;
+      assessment = `[ WARNING ] Riktā (Empty) Tithi active. Avoid initiating auspicious events.`;
       status = "warning";
     } else if (karanaIndex === 6) {
-      assessment = `[ DANGER ] Viṣṭi Karana (Bhadra) is active. Highly malefic for most activities.`;
+      assessment = `[ DANGER ] Viṣṭi Karaṇa (Bhadra) is active. Highly malefic for most activities.`;
       status = "danger";
     } else if (yogaIndex === 16 || yogaIndex === 26) {
       assessment = `[ WARNING ] Malefic Yoga (${yogaName}) active. Delays and obstacles likely.`;
@@ -91,7 +105,7 @@ export async function GET(request: NextRequest) {
       moon: formatDeg(moonLong),
       sun: formatDeg(sunLong),
       nakshatra: { name: nakName, index: nakIndex, progress: nakProgress.toFixed(1) },
-      tithi: { name: tithiType, number: tithiNum },
+      tithi: { name: tithiDisplay, phase: phase },
       karana: { name: karanaName },
       yoga: { name: yogaName },
       assessment: { text: assessment, status }
