@@ -16,8 +16,9 @@ const ACTIVITIES = [
 ];
 
 export default function Planner() {
+  const [mounted, setMounted] = useState(false);
   const [activity, setActivity] = useState('travel');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState("");
   const [windows, setWindows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCriteria, setShowCriteria] = useState(true);
@@ -34,6 +35,8 @@ export default function Planner() {
     setLat(localStorage.getItem('jyotish_lat') || "51.6242");
     setLon(localStorage.getItem('jyotish_lon') || "0.0604");
     setNatalStar(localStorage.getItem('jyotish_star') || "11");
+    setStartDate(new Date().toISOString().split('T')[0]);
+    setMounted(true);
   }, []);
 
   const saveSettings = () => {
@@ -45,6 +48,7 @@ export default function Planner() {
   };
 
   const fetchWindows = async (selectedActivity: string, start: string) => {
+    if (!start) return;
     setLoading(true);
     setMicroData(null);
     try {
@@ -70,8 +74,11 @@ export default function Planner() {
   };
 
   useEffect(() => {
-    if (lat && lon) fetchWindows(activity, startDate);
-  }, [activity, lat, lon, startDate]);
+    if (mounted && lat && lon && startDate) fetchWindows(activity, startDate);
+  }, [activity, lat, lon, startDate, mounted]);
+
+  // Prevent hydration mismatch by returning a skeleton until the client timezone is confirmed
+  if (!mounted) return <div className="min-h-screen bg-[#FAF9F6]"></div>;
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#1A2E26] font-sans font-light relative selection:bg-[#00FBB0] selection:text-[#021F1E]">
