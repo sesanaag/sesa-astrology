@@ -5,12 +5,12 @@ import { ACTIVITY_LIBRARY } from '@/lib/engine/activities';
 
 const ACTIVITIES = [
   { id: 'business', label: 'Business / Commerce' },
-  { id: 'travel', label: 'Travel / Yatra' },
+  { id: 'travel', label: 'Travel / Yātrā' },
   { id: 'property', label: 'Property Purchasing' },
   { id: 'litigation', label: 'Litigation (Plaintiff)' },
   { id: 'hair_cutting', label: 'Hair & Beard Cutting' },
   { id: 'nail_cutting', label: 'Nail Cutting' },
-  { id: 'oil_bath', label: 'Oil Bath (Abhyanga)' },
+  { id: 'oil_bath', label: 'Oil Bath (Abhyaṅga)' },
   { id: 'education', label: 'Education / Vidyā' },
   { id: 'paying_debts', label: 'Paying Debts' }
 ];
@@ -56,7 +56,7 @@ export default function Planner() {
     setLoading(true);
     setMicroData(null);
     try {
-      const res = await fetch(`/api/scanner?activity=${selectedActivity}&natal_nakshatra=${natalStar}&startDate=${start}`);
+      const res = await fetch(`/api/scanner?activity=${selectedActivity}&natal_nakshatra=${natalStar}&startDate=${start}&lat=${lat}&lon=${lon}`);
       const data = await res.json();
       setWindows(data.viable_windows || []);
     } catch (error) {
@@ -135,7 +135,7 @@ export default function Planner() {
               {ACTIVITIES.map(act => <option key={act.id} value={act.id}>{act.label}</option>)}
             </select>
             <a 
-              href={`/api/scanner?activity=${activity}&natal_nakshatra=${natalStar}&startDate=${startDate}&format=ics`}
+              href={`/api/scanner?activity=${activity}&natal_nakshatra=${natalStar}&startDate=${startDate}&format=ics&lat=${lat}&lon=${lon}`}
               className="bg-[#0A4A49] text-[#00FBB0] hover:bg-[#00FBB0] hover:text-[#021F1E] px-6 py-2.5 rounded-none transition-colors flex justify-center items-center font-bold tracking-[0.2em] whitespace-nowrap uppercase text-[10px] shadow-sm w-full sm:w-auto"
             >
               Export .ICS
