@@ -31,6 +31,10 @@ export default function Planner() {
   const [lat, setLat] = useState("51.6242");
   const [lon, setLon] = useState("0.0604");
   const [natalStar, setNatalStar] = useState("11");
+  
+  // Geocoding States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [cityResults, setCityResults] = useState<any[]>([]);
 
   const [microData, setMicroData] = useState<{date: string, windows: any[]} | null>(null);
   const [microLoading, setMicroLoading] = useState(false);
@@ -39,9 +43,34 @@ export default function Planner() {
     setLat(localStorage.getItem('jyotish_lat') || "51.6242");
     setLon(localStorage.getItem('jyotish_lon') || "0.0604");
     setNatalStar(localStorage.getItem('jyotish_star') || "11");
+    setSearchQuery(localStorage.getItem('jyotish_city') || "London, United Kingdom");
     setStartDate(new Date().toISOString().split('T')[0]);
     setMounted(true);
   }, []);
+
+  const searchCities = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 3) {
+      setCityResults([]);
+      return;
+    }
+    try {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&format=json`);
+      const data = await res.json();
+      setCityResults(data.results || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const selectCity = (city: any) => {
+    setLat(city.latitude.toString());
+    setLon(city.longitude.toString());
+    const locationString = `${city.name}, ${city.admin1 ? city.admin1 + ', ' : ''}${city.country}`;
+    setSearchQuery(locationString);
+    localStorage.setItem('jyotish_city', locationString);
+    setCityResults([]);
+  };
 
   const saveSettings = () => {
     localStorage.setItem('jyotish_lat', lat);
@@ -97,17 +126,42 @@ export default function Planner() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#89CFF0] via-[#D4AF37] to-[#00FBB0]"></div>
             <h2 className="text-lg font-medium mb-8 text-[#00FBB0] tracking-[0.2em] uppercase">Engine Configuration</h2>
             <div className="space-y-6 mb-10">
-              <div>
-                <label className="block text-xs font-medium mb-2 text-[#89CFF0] uppercase tracking-widest">Latitude</label>
-                <input type="text" value={lat} onChange={e => setLat(e.target.value)} className="w-full bg-[#021F1E] border-none rounded-none px-4 py-3 text-[#FAF9F6] focus:outline-none focus:ring-1 focus:ring-[#00FBB0] transition-shadow" />
+              <div className="relative">
+                <label className="block text-xs font-medium mb-2 text-[#89CFF0] uppercase tracking-widest">Observer Location</label>
+                <input 
+                  type="text" 
+                  value={searchQuery} 
+                  onChange={e => searchCities(e.target.value)} 
+                  placeholder="Search city..."
+                  className="w-full bg-[#021F1E] border-none rounded-none px-4 py-3 text-[#FAF9F6] focus:outline-none focus:ring-1 focus:ring-[#00FBB0] transition-shadow" 
+                />
+                {cityResults.length > 0 && (
+                  <div className="absolute top-full left-0 w-full bg-white text-[#1A2E26] shadow-lg z-50 max-h-48 overflow-y-auto border border-[#E0E7E7]">
+                    {cityResults.map((city, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => selectCity(city)}
+                        className="px-4 py-3 hover:bg-[#E0E7E7] cursor-pointer text-sm border-b border-[#E0E7E7] last:border-none"
+                      >
+                        <span className="font-medium">{city.name}</span>
+                        <span className="text-xs text-[#7A8B8C] block">{city.admin1 ? city.admin1 + ', ' : ''}{city.country}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
               <div>
-                <label className="block text-xs font-medium mb-2 text-[#89CFF0] uppercase tracking-widest">Longitude</label>
-                <input type="text" value={lon} onChange={e => setLon(e.target.value)} className="w-full bg-[#021F1E] border-none rounded-none px-4 py-3 text-[#FAF9F6] focus:outline-none focus:ring-1 focus:ring-[#00FBB0] transition-shadow" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-2 text-[#89CFF0] uppercase tracking-widest">Natal Nakṣatra Index (0-26)</label>
-                <input type="text" value={natalStar} onChange={e => setNatalStar(e.target.value)} className="w-full bg-[#021F1E] border-none rounded-none px-4 py-3 text-[#FAF9F6] focus:outline-none focus:ring-1 focus:ring-[#00FBB0] transition-shadow" />
+                <label className="block text-xs font-medium mb-2 text-[#89CFF0] uppercase tracking-widest">Natal Nakṣatra</label>
+                <select 
+                  value={natalStar} 
+                  onChange={e => setNatalStar(e.target.value)} 
+                  className="w-full bg-[#021F1E] border-none rounded-none px-4 py-3 text-[#FAF9F6] focus:outline-none focus:ring-1 focus:ring-[#00FBB0] transition-shadow appearance-none cursor-pointer"
+                >
+                  {IAST_NAKSHATRAS.map((nak, idx) => (
+                    <option key={idx} value={idx}>{idx + 1} - {nak}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <button onClick={saveSettings} className="w-full bg-[#00FBB0] text-[#021F1E] py-4 rounded-none font-bold tracking-[0.2em] hover:bg-white transition-colors uppercase text-sm">Save & Re-Scan</button>
@@ -178,7 +232,7 @@ export default function Planner() {
                   Optimized Timeline
                 </h3>
                 <span className="text-xs font-medium text-[#7A8B8C] tracking-widest mt-2 block uppercase">
-                  {new Date(microData.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} • GPS: {lat}, {lon}
+                  {new Date(microData.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} • {searchQuery}
                 </span>
               </div>
               <button 
