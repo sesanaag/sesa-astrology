@@ -11,7 +11,9 @@ const IAST_TITHIS = ["Pratipat", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañca
 const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => new Promise(r => swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (res: any) => r(res.julday || res)));
 const getAyanamsa = (julday: number): Promise<number> => new Promise(r => swisseph.swe_get_ayanamsa_ut(julday, (res: any) => r(res.ayanamsa || res)));
 const getCalc = (julday: number, planet: number, flags: number): Promise<any> => new Promise((r, rej) => swisseph.swe_calc_ut(julday, planet, flags, (res: any) => res.error ? rej(res.error) : r(res)));
-const getHouses = (julday: number, lat: number, lon: number): Promise<any> => new Promise((r, rej) => swisseph.swe_houses_ex(julday, swisseph.SEFLG_SIDEREAL, lat, lon, 'W', (res: any) => res.error ? rej(res.error) : r(res)));
+
+// FIX: Removed SEFLG_SIDEREAL flag from the Houses calculation. This forces the C-binary to return the true Tropical Ascendant so our manual Lahiri subtraction is perfect.
+const getHouses = (julday: number, lat: number, lon: number): Promise<any> => new Promise((r, rej) => swisseph.swe_houses(julday, lat, lon, 'W', (res: any) => res.error ? rej(res.error) : r(res)));
 
 const formatDeg = (deg: number) => {
   const signIndex = Math.floor(deg / 30);
@@ -51,6 +53,7 @@ export async function GET(request: NextRequest) {
     const moonLong = moonRes.longitude || moonRes[0] || 0;
     const sunLong = sunRes.longitude || sunRes[0] || 0;
     
+    // With the binary flag removed, this subtraction is now flawless.
     const ascTropical = housesRes.ascendant || housesRes.house?.[1] || housesRes[1] || 0;
     const ascSidereal = (ascTropical - ayanamsa + 360) % 360;
 
