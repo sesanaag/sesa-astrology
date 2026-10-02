@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import swisseph from 'swisseph';
 import path from 'path';
 import { ACTIVITY_LIBRARY } from '@/lib/engine/activities';
+import tzLookup from 'tz-lookup';
 
 const getJulDay = (year: number, month: number, day: number, hour: number): Promise<number> => {
   return new Promise((resolve) => swisseph.swe_julday(year, month, day, hour, swisseph.SE_GREG_CAL, (r: any) => resolve(r.julday || r)));
@@ -19,6 +20,8 @@ export async function GET(request: NextRequest) {
     const natalStar = parseInt(request.nextUrl.searchParams.get('natal_nakshatra') || '11', 10);
     const startDateParam = request.nextUrl.searchParams.get('startDate');
     const format = request.nextUrl.searchParams.get('format');
+    const lat = parseFloat(request.nextUrl.searchParams.get('lat') || '51.6242');
+    const lon = parseFloat(request.nextUrl.searchParams.get('lon') || '0.0604');
     
     if (!activityKey || !ACTIVITY_LIBRARY[activityKey]) {
       return NextResponse.json({ error: "Invalid activity key provided." }, { status: 400 });
@@ -27,7 +30,8 @@ export async function GET(request: NextRequest) {
     const activeRule = ACTIVITY_LIBRARY[activityKey];
     const BASE_DATE = startDateParam ? new Date(startDateParam) : new Date();
     const windows = [];
-
+    
+    const timeZone = tzLookup(lat, lon);
     const flags = swisseph.SEFLG_SIDEREAL | swisseph.SEFLG_SPEED | swisseph.SEFLG_MOSEPH;
 
     for (let i = 0; i < 60; i++) {
@@ -35,11 +39,19 @@ export async function GET(request: NextRequest) {
       scanDate.setUTCDate(scanDate.getUTCDate() + i);
       scanDate.setUTCHours(12, 0, 0, 0);
 
+      const dateStr = scanDate.toLocaleString('en-US', { timeZone });
+      const utcStr = scanDate.toLocaleString('en-US', { timeZone: 'UTC' });
+      const offsetHours = (new Date(dateStr).getTime() - new Date(utcStr).getTime()) / 3600000;
+
+      const targetUtcHour = 12 - offsetHours;
+      const totalUtcMinutes = Math.round(targetUtcHour * 60);
+      scanDate.setUTCHours(0, totalUtcMinutes, 0, 0);
+
       const y = scanDate.getUTCFullYear();
       const m = scanDate.getUTCMonth() + 1;
       const d = scanDate.getUTCDate();
       
-      const julday = await getJulDay(y, m, d, 12);
+      const julday = await getJulDay(y, m, d, targetUtcHour);
       const moonRes: any = await getCalc(julday, swisseph.SE_MOON, flags);
       const sunRes: any = await getCalc(julday, swisseph.SE_SUN, flags);
       
@@ -49,7 +61,10 @@ export async function GET(request: NextRequest) {
       const luniSolarDiff = (moonLong - sunLong + 360) % 360;
       const tithiIndex = Math.floor(luniSolarDiff / 12) + 1;
       const nakshatraIndex = Math.floor(moonLong / (360 / 27));
-      const varaIndex = scanDate.getUTCDay();
+      
+      const localDateString = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long' }).format(scanDate);
+      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const varaIndex = daysOfWeek.indexOf(localDateString);
 
       const isVaraFav = activeRule.varas.includes(varaIndex);
       const isTithiFav = activeRule.tithis.includes(tithiIndex) || activeRule.tithis.includes(tithiIndex % 15 || 15);
