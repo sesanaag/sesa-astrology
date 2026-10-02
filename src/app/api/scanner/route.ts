@@ -80,12 +80,12 @@ export async function GET(request: NextRequest) {
       if (isNakFav) score++;
       if (isTaraFav) score++;
 
+      // FIX: Increased threshold to 3 to strictly filter out "Neutral" noise days.
       let status = '';
       if (score === 4) status = 'EXCELLENT';
       else if (score === 3) status = 'OPTIMAL';
-      else if (score === 2) status = 'NEUTRAL';
 
-      if (score >= 2) {
+      if (score >= 3) {
         windows.push({
           date: scanDate.toISOString(),
           vara_index: varaIndex,
@@ -100,7 +100,6 @@ export async function GET(request: NextRequest) {
     if (format === 'ics') {
       let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nCALSCALE:GREGORIAN\r\n";
       for (const w of windows) {
-        if (w.status === 'NEUTRAL') continue; 
         const dt = w.date.replace(/[-:]/g, '').split('.')[0] + 'Z';
         ics += `BEGIN:VEVENT\r\nDTSTART:${dt}\r\nDTEND:${dt}\r\nSUMMARY:Jyotish Window: ${activityKey}\r\nEND:VEVENT\r\n`;
       }

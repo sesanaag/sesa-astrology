@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ACTIVITY_LIBRARY } from '@/lib/engine/activities';
 
 const ACTIVITIES = [
@@ -32,10 +33,11 @@ export default function Planner() {
   const [lon, setLon] = useState("0.0604");
   const [natalStar, setNatalStar] = useState("11");
   
-  // Geocoding States
   const [searchQuery, setSearchQuery] = useState("");
   const [cityResults, setCityResults] = useState<any[]>([]);
 
+  // FIX: Track the index of the expanded card to render inline
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [microData, setMicroData] = useState<{date: string, windows: any[]} | null>(null);
   const [microLoading, setMicroLoading] = useState(false);
 
@@ -77,6 +79,7 @@ export default function Planner() {
     localStorage.setItem('jyotish_lon', lon);
     localStorage.setItem('jyotish_star', natalStar);
     setShowSettings(false);
+    setExpandedIndex(null);
     fetchWindows(activity, startDate);
   };
 
@@ -84,6 +87,7 @@ export default function Planner() {
     if (!start) return;
     setLoading(true);
     setMicroData(null);
+    setExpandedIndex(null);
     try {
       const res = await fetch(`/api/scanner?activity=${selectedActivity}&natal_nakshatra=${natalStar}&startDate=${start}&lat=${lat}&lon=${lon}`);
       const data = await res.json();
@@ -94,7 +98,13 @@ export default function Planner() {
     setLoading(false);
   };
 
-  const optimizeTime = async (date: string) => {
+  const optimizeTime = async (date: string, idx: number) => {
+    if (expandedIndex === idx) {
+      setExpandedIndex(null);
+      setMicroData(null);
+      return;
+    }
+    setExpandedIndex(idx);
     setMicroLoading(true);
     try {
       const res = await fetch(`/api/micro?date=${date}&activity=${activity}&lat=${lat}&lon=${lon}`);
@@ -118,11 +128,11 @@ export default function Planner() {
   if (!mounted) return <div className="min-h-screen bg-[#FAF9F6]"></div>;
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-[#1A2E26] font-sans font-light relative selection:bg-[#00FBB0] selection:text-[#021F1E]">
+    <div className="min-h-screen bg-[#FAF9F6] text-[#1A2E26] font-serif relative selection:bg-[#00FBB0] selection:text-[#021F1E]">
       
       {showSettings && (
         <div className="fixed inset-0 bg-[#021F1E]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="p-10 rounded-none bg-[#063736] max-w-md w-full shadow-2xl relative border border-[#00FBB0]/20">
+          <div className="p-10 rounded-none bg-[#063736] max-w-md w-full shadow-2xl relative border border-[#00FBB0]/20 font-sans">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#89CFF0] via-[#D4AF37] to-[#00FBB0]"></div>
             <h2 className="text-lg font-medium mb-8 text-[#00FBB0] tracking-[0.2em] uppercase">Engine Configuration</h2>
             <div className="space-y-6 mb-10">
@@ -169,9 +179,14 @@ export default function Planner() {
         </div>
       )}
 
-      <div className="bg-[#021F1E] border-b-2 border-[#D4AF37]/30 shadow-lg relative z-10 w-full">
+      <div className="bg-[#021F1E] border-b-2 border-[#D4AF37]/30 shadow-lg relative z-10 w-full font-sans">
         <header className="max-w-5xl mx-auto px-8 py-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
+            <div className="flex items-center gap-4 mb-3">
+              <Link href="/" className="text-xs text-[#89CFF0] hover:text-[#00FBB0] font-medium transition-colors flex items-center gap-1 tracking-widest uppercase">
+                ⌂ Home
+              </Link>
+            </div>
             <h1 className="text-2xl font-light tracking-[0.25em] text-[#00FBB0] mb-3 uppercase flex items-center gap-3 drop-shadow-md">
               Jyotish Command <span className="text-[#D4AF37] text-sm">✦</span>
             </h1>
@@ -204,8 +219,7 @@ export default function Planner() {
       </div>
 
       <div className="max-w-5xl mx-auto px-8 py-10">
-        
-        <div className="mb-10 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border border-[#E0E7E7]">
+        <div className="mb-10 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border border-[#E0E7E7] font-sans">
           <div 
             className="flex justify-between items-center p-6 cursor-pointer hover:bg-[#FAF9F6] transition-colors"
             onClick={() => setShowCriteria(!showCriteria)}
@@ -218,81 +232,23 @@ export default function Planner() {
             </button>
           </div>
           {showCriteria && (
-            <div className="px-6 pb-6 pt-0 text-sm text-[#4A5D5C] leading-relaxed font-light tracking-wide">
+            <div className="px-6 pb-6 pt-0 text-sm text-[#4A5D5C] leading-relaxed font-light tracking-wide font-serif">
               {ACTIVITY_LIBRARY[activity]?.description || "No classical description available for this activity."}
             </div>
           )}
         </div>
 
-        {microData && (
-          <div className="mb-12 bg-white p-8 relative shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-t-2 border-[#D4AF37]">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <h3 className="text-[#0D5C58] font-medium text-lg uppercase tracking-[0.15em]">
-                  Optimized Timeline
-                </h3>
-                <span className="text-xs font-medium text-[#7A8B8C] tracking-widest mt-2 block uppercase">
-                  {new Date(microData.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} • {searchQuery}
-                </span>
-              </div>
-              <button 
-                onClick={() => setMicroData(null)}
-                className="text-[#7A8B8C] hover:text-[#1A2E26] text-[10px] font-medium tracking-[0.2em] uppercase transition-colors"
-              >
-                Close ✕
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[2px] bg-[#E0E7E7] border border-[#E0E7E7]">
-              {microData.windows.map((win, idx) => {
-                const isFav = win.favorable_lagna;
-                const hasCombo = Boolean(win.combination_active);
-
-                return (
-                  <div 
-                    key={idx} 
-                    className={`p-6 text-sm flex flex-col justify-between transition-colors ${
-                      hasCombo ? 'bg-[#FCFBF4]' : isFav ? 'bg-white' : 'bg-[#FAF9F6] opacity-60'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <span className={`font-medium tracking-wider ${hasCombo ? 'text-[#B8860B]' : 'text-[#1A2E26]'}`}>{win.start_time} – {win.end_time}</span>
-                        {hasCombo ? (
-                          <span className="text-[9px] px-2 py-1 bg-[#D4AF37]/10 text-[#B8860B] tracking-[0.2em] uppercase font-medium">Special Yoga</span>
-                        ) : isFav ? (
-                          <span className="text-[9px] text-[#0D5C58] tracking-[0.2em] uppercase font-medium">Favorable</span>
-                        ) : (
-                          <span className="text-[9px] text-[#7A8B8C] tracking-[0.2em] uppercase font-medium">Neutral</span>
-                        )}
-                      </div>
-                      <div className={`text-xs font-light tracking-widest uppercase ${hasCombo ? 'text-[#1A2E26]' : isFav ? 'text-[#0D5C58]' : 'text-[#7A8B8C]'}`}>
-                        Lagna: {win.lagna_name.split(' ')[0]}
-                      </div>
-                    </div>
-                    {win.combination_active && (
-                      <div className="mt-4 text-[11px] text-[#B8860B] font-medium tracking-wider uppercase">
-                        ✦ {win.combination_active}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {loading ? (
-          <div className="text-center py-32 text-[#0D5C58] font-medium tracking-[0.2em] uppercase flex flex-col items-center gap-6 text-sm">
+          <div className="text-center py-32 text-[#0D5C58] font-sans font-medium tracking-[0.2em] uppercase flex flex-col items-center gap-6 text-sm">
             <svg className="animate-spin h-6 w-6 text-[#7A8B8C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             Consulting Ephemeris
           </div>
         ) : windows.length === 0 ? (
-          <div className="text-center py-32 text-[#7A8B8C] bg-white shadow-sm font-light tracking-[0.2em] uppercase text-sm border border-[#E0E7E7]">
-            No viable windows found in the current horizon.
+          <div className="text-center py-32 text-[#7A8B8C] bg-white shadow-sm font-sans font-light tracking-[0.2em] uppercase text-sm border border-[#E0E7E7]">
+            No strictly optimal windows found in the current 60-day horizon.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {windows.map((win, idx) => {
               const displayDate = new Date(win.date).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
               
@@ -310,34 +266,72 @@ export default function Planner() {
                   : `${tithiName} ${paksa} Pakṣa (${tithiPhaseNum}${getSuffix(tithiPhaseNum)})`;
 
               const nakName = IAST_NAKSHATRAS[win.nakshatra_index];
+              const isExpanded = expandedIndex === idx;
 
               return (
-                <div key={idx} className="bg-white p-7 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border border-[#E0E7E7]/50 hover:border-[#0D5C58]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group duration-300">
-                  <div>
-                    <div className="flex justify-between items-center mb-8">
-                      <h2 className="font-medium text-lg text-[#1A2E26] tracking-wide uppercase">{displayDate}</h2>
-                      {win.status === 'EXCELLENT' ? (
-                        <span className="text-[10px] text-[#0D5C58] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">Excellent</span>
-                      ) : win.status === 'OPTIMAL' ? (
-                        <span className="text-[10px] text-[#D4AF37] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">✦ Optimal</span>
-                      ) : (
-                        <span className="text-[10px] text-[#7A8B8C] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">Neutral</span>
-                      )}
+                <React.Fragment key={idx}>
+                  <div className="bg-white p-7 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border border-[#E0E7E7]/50 hover:border-[#0D5C58]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group duration-300">
+                    <div>
+                      <div className="flex justify-between items-center mb-8 font-sans">
+                        <h2 className="font-medium text-lg text-[#1A2E26] tracking-wide uppercase">{displayDate}</h2>
+                        {win.status === 'EXCELLENT' ? (
+                          <span className="text-[10px] text-[#0D5C58] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">Excellent</span>
+                        ) : (
+                          <span className="text-[10px] text-[#D4AF37] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">✦ Optimal</span>
+                        )}
+                      </div>
+                      <div className="space-y-4 text-[13px] mb-8 text-[#4A5D5C] font-serif">
+                        <div className="flex justify-between items-center border-b border-[#E0E7E7]/50 pb-2"><span className="text-[#7A8B8C] font-sans text-[10px] uppercase tracking-widest">Vāra</span><span className="text-[#1A2E26]">{varaName}</span></div>
+                        <div className="flex justify-between items-center border-b border-[#E0E7E7]/50 pb-2"><span className="text-[#7A8B8C] font-sans text-[10px] uppercase tracking-widest">Tithi</span><span className="text-[#1A2E26]">{displayTithi}</span></div>
+                        <div className="flex justify-between items-center"><span className="text-[#7A8B8C] font-sans text-[10px] uppercase tracking-widest">Nakṣatra</span><span className="text-[#1A2E26]">{nakName}</span></div>
+                      </div>
                     </div>
-                    <div className="space-y-4 text-[11px] mb-8 text-[#7A8B8C] font-medium tracking-[0.15em] uppercase">
-                      <div className="flex justify-between items-center"><span>Vāra</span><span className="text-[#1A2E26]">{varaName}</span></div>
-                      <div className="flex justify-between items-center"><span>Tithi</span><span className="text-[#1A2E26]">{displayTithi}</span></div>
-                      <div className="flex justify-between items-center"><span>Nakṣatra</span><span className="text-[#1A2E26]">{nakName}</span></div>
-                    </div>
+                    <button 
+                      onClick={() => optimizeTime(win.date, idx)}
+                      disabled={microLoading && expandedIndex === idx}
+                      className={`w-full py-4 text-[10px] transition-colors duration-300 font-sans font-medium tracking-[0.2em] uppercase disabled:opacity-50 ${isExpanded ? 'bg-[#0D5C58] text-white' : 'bg-[#FAF9F6] group-hover:bg-[#0D5C58] group-hover:text-white text-[#7A8B8C]'}`}
+                    >
+                      {microLoading && expandedIndex === idx ? 'Calculating...' : isExpanded ? 'Close Timeline ✕' : 'Optimize Time'}
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => optimizeTime(win.date)}
-                    disabled={microLoading}
-                    className="w-full bg-[#FAF9F6] group-hover:bg-[#0D5C58] group-hover:text-white text-[#7A8B8C] py-4 text-[10px] transition-colors duration-300 font-medium tracking-[0.2em] uppercase disabled:opacity-50"
-                  >
-                    {microLoading ? 'Calculating...' : 'Optimize Time'}
-                  </button>
-                </div>
+
+                  {/* INLINE MICRO-TIMELINE DROP DOWN */}
+                  {isExpanded && microData && (
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-white p-8 relative shadow-inner border-t-2 border-[#D4AF37] font-sans animate-in fade-in slide-in-from-top-4 duration-300">
+                      <div className="flex justify-between items-start mb-8">
+                        <div>
+                          <h3 className="text-[#0D5C58] font-medium text-lg uppercase tracking-[0.15em]">
+                            Local Timeline Breakdown
+                          </h3>
+                          <span className="text-xs font-medium text-[#7A8B8C] tracking-widest mt-2 block uppercase">
+                            {new Date(microData.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} • {searchQuery}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[2px] bg-[#E0E7E7] border border-[#E0E7E7]">
+                        {microData.windows.map((w, microIdx) => {
+                          const isFav = w.favorable_lagna;
+                          return (
+                            <div key={microIdx} className={`p-4 text-sm flex flex-col justify-between transition-colors ${isFav ? 'bg-white' : 'bg-[#FAF9F6] opacity-60'}`}>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className={`text-[11px] font-medium tracking-wider ${isFav ? 'text-[#1A2E26]' : 'text-[#7A8B8C]'}`}>{w.start_time}</span>
+                                {isFav ? (
+                                  <span className="text-[9px] text-[#D4AF37] tracking-[0.2em] uppercase font-bold">Śubha</span>
+                                ) : (
+                                  <span className="text-[9px] text-[#7A8B8C] tracking-[0.2em] uppercase font-medium">Neutral</span>
+                                )}
+                              </div>
+                              <div className={`text-[13px] font-serif ${isFav ? 'text-[#0D5C58]' : 'text-[#7A8B8C]'}`}>
+                                Lagna: {w.lagna_name.split(' ')[0]}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
               );
             })}
           </div>
