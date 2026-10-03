@@ -36,7 +36,6 @@ export default function Planner() {
   const [searchQuery, setSearchQuery] = useState("");
   const [cityResults, setCityResults] = useState<any[]>([]);
 
-  // Track the index of the expanded card to render inline
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [microData, setMicroData] = useState<{date: string, windows: any[]} | null>(null);
   const [microLoading, setMicroLoading] = useState(false);
@@ -188,7 +187,7 @@ export default function Planner() {
               </Link>
             </div>
             <h1 className="text-2xl font-light tracking-[0.25em] text-[#00FBB0] mb-3 uppercase flex items-center gap-3 drop-shadow-md">
-              Jyotish Command <span className="text-[#D4AF37] text-sm">v2.0 ✦</span>
+              Jyotish Command <span className="text-[#D4AF37] text-sm">v2.1 ✦</span>
             </h1>
             <button onClick={() => setShowSettings(true)} className="text-xs text-[#89CFF0] hover:text-white font-medium transition-colors flex items-center gap-2 tracking-widest uppercase">
               Configure GPS & Natal Profile
@@ -208,12 +207,6 @@ export default function Planner() {
             >
               {ACTIVITIES.map(act => <option key={act.id} value={act.id}>{act.label}</option>)}
             </select>
-            <a 
-              href={`/api/scanner?activity=${activity}&natal_nakshatra=${natalStar}&startDate=${startDate}&format=ics&lat=${lat}&lon=${lon}`}
-              className="bg-[#0A4A49] text-[#00FBB0] hover:bg-[#00FBB0] hover:text-[#021F1E] px-6 py-2.5 rounded-none transition-colors flex justify-center items-center font-bold tracking-[0.2em] whitespace-nowrap uppercase text-[10px] shadow-sm w-full sm:w-auto"
-            >
-              Export .ICS
-            </a>
           </div>
         </header>
       </div>
@@ -270,16 +263,25 @@ export default function Planner() {
 
               return (
                 <React.Fragment key={idx}>
-                  <div className={`bg-white p-7 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border transition-all group duration-300 ${isExpanded ? 'border-[#0D5C58]' : 'border-[#E0E7E7]/50 hover:border-[#0D5C58]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'}`}>
+                  <div className={`bg-white p-7 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border transition-all group duration-300 ${isExpanded ? 'border-[#0D5C58]' : win.status === 'DANGER' ? 'border-red-500/30 bg-red-50/30' : 'border-[#E0E7E7]/50 hover:border-[#0D5C58]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'}`}>
                     <div>
-                      <div className="flex justify-between items-center mb-8 font-sans">
-                        <h2 className="font-medium text-lg text-[#1A2E26] tracking-wide uppercase">{displayDate}</h2>
+                      <div className="flex justify-between items-center mb-6 font-sans">
+                        <h2 className={`font-medium text-lg tracking-wide uppercase ${win.status === 'DANGER' ? 'text-red-900' : 'text-[#1A2E26]'}`}>{displayDate}</h2>
                         {win.status === 'EXCELLENT' ? (
                           <span className="text-[10px] text-[#0D5C58] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">Excellent</span>
+                        ) : win.status === 'DANGER' ? (
+                          <span className="text-[10px] text-red-600 tracking-[0.2em] uppercase font-semibold flex items-center gap-1">⚠️ Danger</span>
                         ) : (
                           <span className="text-[10px] text-[#D4AF37] tracking-[0.2em] uppercase font-semibold flex items-center gap-1">✦ Optimal</span>
                         )}
                       </div>
+                      
+                      {win.combo_name && (
+                        <div className={`text-[10px] font-bold tracking-widest uppercase mb-6 ${win.status === 'DANGER' ? 'text-red-600' : 'text-[#B8860B]'}`}>
+                          {win.status === 'DANGER' ? '⚠️' : '✦'} {win.combo_name}
+                        </div>
+                      )}
+
                       <div className="space-y-4 text-[13px] mb-8 text-[#4A5D5C] font-serif">
                         <div className="flex justify-between items-center border-b border-[#E0E7E7]/50 pb-2"><span className="text-[#7A8B8C] font-sans text-[10px] uppercase tracking-widest">Vāra</span><span className="text-[#1A2E26]">{varaName}</span></div>
                         <div className="flex justify-between items-center border-b border-[#E0E7E7]/50 pb-2"><span className="text-[#7A8B8C] font-sans text-[10px] uppercase tracking-widest">Tithi</span><span className="text-[#1A2E26]">{displayTithi}</span></div>
@@ -289,7 +291,7 @@ export default function Planner() {
                     <button 
                       onClick={() => optimizeTime(win.date, idx)}
                       disabled={microLoading && expandedIndex === idx}
-                      className={`w-full py-4 text-[10px] transition-colors duration-300 font-sans font-medium tracking-[0.2em] uppercase disabled:opacity-50 ${isExpanded ? 'bg-[#0D5C58] text-white' : 'bg-[#FAF9F6] group-hover:bg-[#0D5C58] group-hover:text-white text-[#7A8B8C]'}`}
+                      className={`w-full py-4 text-[10px] transition-colors duration-300 font-sans font-medium tracking-[0.2em] uppercase disabled:opacity-50 ${isExpanded ? 'bg-[#0D5C58] text-white' : win.status === 'DANGER' ? 'bg-red-50 text-red-700 group-hover:bg-red-600 group-hover:text-white' : 'bg-[#FAF9F6] group-hover:bg-[#0D5C58] group-hover:text-white text-[#7A8B8C]'}`}
                     >
                       {microLoading && expandedIndex === idx ? 'Calculating...' : isExpanded ? 'Close Timeline ✕' : 'Optimize Time'}
                     </button>
@@ -312,19 +314,27 @@ export default function Planner() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[2px] bg-[#E0E7E7] border border-[#E0E7E7]">
                         {microData.windows.map((w, microIdx) => {
                           const isFav = w.favorable_lagna;
+                          const isAvoid = w.combination_active.includes('Avoid');
                           return (
-                            <div key={microIdx} className={`p-4 text-sm flex flex-col justify-between transition-colors ${isFav ? 'bg-white' : 'bg-[#FAF9F6] opacity-60'}`}>
+                            <div key={microIdx} className={`p-4 text-sm flex flex-col justify-between transition-colors ${isAvoid ? 'bg-red-50/50' : isFav ? 'bg-white' : 'bg-[#FAF9F6] opacity-60'}`}>
                               <div className="flex justify-between items-center mb-2">
-                                <span className={`text-[11px] font-medium tracking-wider ${isFav ? 'text-[#1A2E26]' : 'text-[#7A8B8C]'}`}>{w.start_time}</span>
-                                {isFav ? (
+                                <span className={`text-[11px] font-medium tracking-wider ${isAvoid ? 'text-red-900' : isFav ? 'text-[#1A2E26]' : 'text-[#7A8B8C]'}`}>{w.start_time}</span>
+                                {isAvoid ? (
+                                  <span className="text-[9px] text-red-600 tracking-[0.2em] uppercase font-bold">Avoid</span>
+                                ) : isFav ? (
                                   <span className="text-[9px] text-[#D4AF37] tracking-[0.2em] uppercase font-bold">Śubha</span>
                                 ) : (
                                   <span className="text-[9px] text-[#7A8B8C] tracking-[0.2em] uppercase font-medium">Neutral</span>
                                 )}
                               </div>
-                              <div className={`text-[13px] font-serif ${isFav ? 'text-[#0D5C58]' : 'text-[#7A8B8C]'}`}>
+                              <div className={`text-[13px] font-serif ${isAvoid ? 'text-red-800' : isFav ? 'text-[#0D5C58]' : 'text-[#7A8B8C]'}`}>
                                 Lagna: {w.lagna_name.split(' ')[0]}
                               </div>
+                              {w.combination_active && (
+                                <div className={`mt-2 text-[9px] font-bold tracking-widest uppercase ${isAvoid ? 'text-red-600' : 'text-[#B8860B]'}`}>
+                                  {w.combination_active}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
