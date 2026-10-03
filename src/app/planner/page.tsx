@@ -36,7 +36,7 @@ export default function Planner() {
   const [searchQuery, setSearchQuery] = useState("");
   const [cityResults, setCityResults] = useState<any[]>([]);
 
-  // FIX: Track the index of the expanded card to render inline
+  // Track the index of the expanded card to render inline
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [microData, setMicroData] = useState<{date: string, windows: any[]} | null>(null);
   const [microLoading, setMicroLoading] = useState(false);
@@ -188,7 +188,7 @@ export default function Planner() {
               </Link>
             </div>
             <h1 className="text-2xl font-light tracking-[0.25em] text-[#00FBB0] mb-3 uppercase flex items-center gap-3 drop-shadow-md">
-              Jyotish Command <span className="text-[#D4AF37] text-sm">✦</span>
+              Jyotish Command <span className="text-[#D4AF37] text-sm">v2.0 ✦</span>
             </h1>
             <button onClick={() => setShowSettings(true)} className="text-xs text-[#89CFF0] hover:text-white font-medium transition-colors flex items-center gap-2 tracking-widest uppercase">
               Configure GPS & Natal Profile
@@ -270,7 +270,7 @@ export default function Planner() {
 
               return (
                 <React.Fragment key={idx}>
-                  <div className="bg-white p-7 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border border-[#E0E7E7]/50 hover:border-[#0D5C58]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all group duration-300">
+                  <div className={`bg-white p-7 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] border transition-all group duration-300 ${isExpanded ? 'border-[#0D5C58]' : 'border-[#E0E7E7]/50 hover:border-[#0D5C58]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'}`}>
                     <div>
                       <div className="flex justify-between items-center mb-8 font-sans">
                         <h2 className="font-medium text-lg text-[#1A2E26] tracking-wide uppercase">{displayDate}</h2>
@@ -297,7 +297,7 @@ export default function Planner() {
 
                   {/* INLINE MICRO-TIMELINE DROP DOWN */}
                   {isExpanded && microData && (
-                    <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-white p-8 relative shadow-inner border-t-2 border-[#D4AF37] font-sans animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-white p-8 relative shadow-inner border-y-2 border-[#D4AF37] font-sans animate-in fade-in slide-in-from-top-4 duration-300 mb-6">
                       <div className="flex justify-between items-start mb-8">
                         <div>
                           <h3 className="text-[#0D5C58] font-medium text-lg uppercase tracking-[0.15em]">
